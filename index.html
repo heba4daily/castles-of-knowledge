@@ -1,0 +1,900 @@
+<title>قلاع المعرفة</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;700&family=Reem+Kufi:wght@500;700&display=swap">
+<style>
+/* Layout: one-column war table, RTL — scoreboard, action panel, painted battle map. Single deliberate night theme. */
+:root{
+  --ground:#0E1424; --panel:#161E33; --panel2:#1C2640; --line:#2E3A5E;
+  --ink:#E9ECF5; --muted:#8D97B5; --gold:#E0B252;
+  --p1:#3FA7F5; --p1d:#1F5E95; --p2:#F0605A; --p2d:#9A2F2B; --ok:#4CC38A; --bad:#E5484D;
+  --grass:#3E5B36; --grass2:#2C4428; --road:#B89A6A; --roadedge:#6E5737; --water:#3D78A8; --water2:#6FA6CF; --rock:#6F6A63;
+  --f-display:"Reem Kufi","IBM Plex Sans Arabic",Tahoma,"Segoe UI",sans-serif;
+  --f-body:"IBM Plex Sans Arabic",Tahoma,"Segoe UI",sans-serif;
+  color-scheme:dark;
+}
+html,body{background:var(--ground);color:var(--ink)}
+body{font-family:var(--f-body);font-size:16px;line-height:1.6}
+*{box-sizing:border-box}
+.app{direction:rtl;max-width:820px;margin:0 auto;padding-block:20px 48px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  display:flex;flex-direction:column;gap:14px}
+h1,h2{font-family:var(--f-display);margin:0;text-wrap:balance;font-weight:700}
+h1{font-size:clamp(2.2rem,7vw,3.4rem);color:var(--gold);line-height:1.15}
+h2{font-size:1.3rem}
+p{margin:0}
+.muted{color:var(--muted)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 18px;display:flex;flex-direction:column;gap:12px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+label{font-size:.85rem;color:var(--muted)}
+input[type=text]{font:inherit;font-size:1.05rem;background:var(--ground);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0;flex:1}
+input[type=text]:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
+button{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);padding:10px 16px;font-weight:500}
+button:hover:not(:disabled){border-color:var(--gold)}
+button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+button:disabled{opacity:.5;cursor:default}
+.primary{background:var(--gold);color:#1A1405;border-color:var(--gold);font-weight:700}
+.primary:hover:not(:disabled){filter:brightness(1.08)}
+.ghost{background:transparent}
+.small{font-size:.85rem;padding:6px 12px}
+.note{font-size:.9rem;color:var(--muted);border-inline-start:3px solid var(--gold);padding-inline-start:10px}
+.rules{margin:0;padding-inline-start:20px;display:flex;flex-direction:column;gap:4px;color:var(--muted)}
+.rules b{color:var(--ink)}
+.hero{display:flex;flex-direction:column;gap:8px;padding-top:8px}
+.hero .sub{font-size:1.1rem;color:var(--muted);max-width:44ch}
+.code{font-family:var(--f-display);font-size:2.4rem;letter-spacing:.3em;color:var(--gold);direction:ltr;text-align:center;background:var(--ground);border:1px dashed var(--gold);border-radius:12px;padding:6px 10px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{padding:6px 14px;border-radius:999px;font-size:.92rem}
+.chip[aria-pressed=true]{background:var(--gold);color:#1A1405;border-color:var(--gold);font-weight:700}
+.helpbox{display:flex;flex-direction:column;gap:10px;border:1px dashed var(--gold);border-radius:12px;padding:12px}
+.status{display:flex;gap:8px;align-items:center}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--muted);flex:none}
+.dot.on{background:var(--ok)}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.top .brand{font-family:var(--f-display);color:var(--gold);font-size:1.3rem}
+.top .rnd{color:var(--muted);font-size:.9rem;font-variant-numeric:tabular-nums}
+/* scoreboard */
+.score{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:stretch}
+.pl{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 14px;display:flex;flex-direction:column;gap:2px;min-width:0;border-top:4px solid var(--c)}
+.pl.p1{--c:var(--p1)} .pl.p2{--c:var(--p2)}
+.pl.turn{box-shadow:0 0 0 2px var(--c)}
+.pl .pn{font-weight:700;font-size:1.02rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pl .tag{font-size:.75rem;color:var(--c)}
+.pl .pts{font-family:var(--f-display);font-size:1.7rem;line-height:1.2;font-variant-numeric:tabular-nums}
+.pl .sub{color:var(--muted);font-size:.82rem}
+.vs{align-self:center;font-family:var(--f-display);color:var(--gold);font-size:1.1rem}
+/* map */
+.mapcard{border-radius:16px;overflow:hidden;border:3px solid #4A3A24;box-shadow:0 0 0 1px var(--line),0 10px 30px rgba(0,0,0,.35);background:var(--grass2)}
+.map{width:100%;height:auto;display:block}
+.road-edge{stroke:var(--roadedge);stroke-width:20;stroke-linecap:round;fill:none}
+.road{stroke:var(--road);stroke-width:14;stroke-linecap:round;fill:none}
+.road-mid{stroke:#D6BE8E;stroke-width:2;stroke-dasharray:3 9;stroke-linecap:round;fill:none;opacity:.7}
+.t1{--tc:var(--p1);--tcd:var(--p1d)} .t2{--tc:var(--p2);--tcd:var(--p2d)}
+.spot .base{fill:rgba(0,0,0,.32)}
+.spot .plate{fill:var(--tcd);stroke:var(--tc);stroke-width:3}
+.spot.empty .plate{fill:rgba(255,255,255,.08);stroke:#E9ECF5;stroke-opacity:.55;stroke-dasharray:5 5}
+.spot.empty .plus{stroke:#E9ECF5;stroke-opacity:.7;stroke-width:3;stroke-linecap:round}
+.spot .ring{fill:none;stroke:var(--gold);stroke-width:4;opacity:0}
+.spot.can{cursor:pointer;outline:none}
+.spot.can .ring{opacity:1;stroke-dasharray:8 6;animation:dash 1s linear infinite}
+.spot.can:hover .ring,.spot.can:focus-visible .ring{stroke-width:7}
+.spot.sel .ring{opacity:1;stroke-width:6;stroke-dasharray:none}
+.spot.just .ring{opacity:1;animation:flash .8s ease-out 3}
+.spot .hit{fill:transparent}
+.badge rect{fill:rgba(14,20,36,.85);stroke:var(--tc);stroke-width:1.5}
+.badge text{fill:#F3EEDF;font:700 13px var(--f-body);text-anchor:middle;dominant-baseline:central}
+.walls circle{stroke:#0E1424;stroke-width:1.5}
+@keyframes dash{to{stroke-dashoffset:-28}}
+@keyframes flash{0%,100%{stroke-width:3}50%{stroke-width:12}}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;color:var(--muted);font-size:.82rem;padding:2px 4px}
+.legend b{color:var(--ink);font-variant-numeric:tabular-nums}
+/* panel */
+.qhead{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.cat{font-size:.85rem;background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:3px 12px;color:var(--gold)}
+.timer{height:8px;background:var(--ground);border-radius:99px;overflow:hidden}
+.timer i{display:block;height:100%;background:var(--gold);width:100%;transition:width .2s linear}
+.tsec{font-variant-numeric:tabular-nums;font-family:var(--f-display);font-size:1.2rem}
+.qtext{font-family:var(--f-display);font-size:clamp(1.15rem,4.2vw,1.5rem);line-height:1.5;font-weight:500}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.opt{padding:14px 12px;font-size:1.05rem;text-align:center}
+.opt.mine{border-color:var(--gold);background:color-mix(in srgb,var(--gold) 16%,var(--panel2))}
+.pad{display:flex;flex-direction:column;gap:10px;max-width:340px;width:100%;align-self:center}
+.disp{font-family:var(--f-display);font-size:2.2rem;letter-spacing:.2em;text-align:center;direction:ltr;background:var(--ground);border:1px solid var(--gold);border-radius:12px;padding:4px 10px;min-height:3.4rem;font-variant-numeric:tabular-nums;color:var(--gold)}
+.disp .ph{color:var(--line)}
+.keys{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;direction:ltr}
+.key{font-family:var(--f-display);font-size:1.5rem;padding:10px 0}
+.key.fn{font-family:var(--f-body);font-size:1rem}
+.role{font-weight:700}
+.role.att{color:var(--gold)}
+.ans{display:flex;justify-content:space-between;gap:10px;padding:8px 12px;border-radius:10px;background:var(--ground);flex-wrap:wrap;border-inline-start:4px solid var(--c)}
+.ans.p1{--c:var(--p1)} .ans.p2{--c:var(--p2)}
+.ans .v{font-variant-numeric:tabular-nums}
+.good{color:var(--ok)} .badc{color:var(--bad)}
+.outcome{font-family:var(--f-display);font-size:1.2rem;color:var(--gold)}
+.banner{background:color-mix(in srgb,var(--bad) 18%,var(--panel));border:1px solid var(--bad);border-radius:12px;padding:10px 14px}
+.big{font-family:var(--f-display);font-size:clamp(1.6rem,6vw,2.2rem);color:var(--gold)}
+@media (max-width:480px){.opts{grid-template-columns:1fr}.pl .pts{font-size:1.4rem}}
+@media (prefers-reduced-motion:reduce){.spot.can .ring,.spot.just .ring{animation:none}.timer i{transition:none}}
+</style>
+
+<div class="app" id="app" dir="rtl" lang="ar"></div>
+
+<script>
+// ---------- Question bank: [category, question, correct, wrong, wrong, wrong]
+const CATS=[['din','دينية'],['his','تاريخ'],['geo','جغرافيا'],['sci','علوم'],['spo','رياضة'],['gen','ثقافة عامة']];
+const CATNAME=Object.fromEntries(CATS);
+const MC=[
+['din','كم عدد سور القرآن الكريم؟','114','110','112','120'],
+['din','ما أطول سورة في القرآن الكريم؟','البقرة','آل عمران','النساء','الأعراف'],
+['din','ما أقصر سورة في القرآن الكريم؟','الكوثر','العصر','الإخلاص','الفلق'],
+['din','كم عدد أركان الإسلام؟','خمسة','أربعة','ستة','سبعة'],
+['din','من أول مؤذن في الإسلام؟','بلال بن رباح','عبدالله بن مسعود','أبو هريرة','سلمان الفارسي'],
+['din','ما السورة التي لا تبدأ بالبسملة؟','التوبة','الأنفال','يونس','الحجر'],
+['din','ما النبي الذي التقمه الحوت؟','يونس عليه السلام','موسى عليه السلام','نوح عليه السلام','هود عليه السلام'],
+['din','في أي شهر نزل القرآن الكريم؟','رمضان','شعبان','رجب','ذو الحجة'],
+['din','كم عدد الأنبياء المذكورين بأسمائهم في القرآن؟','25','20','30','18'],
+['din','ما القبلة الأولى للمسلمين؟','المسجد الأقصى','المسجد الحرام','المسجد النبوي','مسجد قباء'],
+['din','كم عدد ركعات صلاة الفجر المفروضة؟','ركعتان','ثلاث ركعات','أربع ركعات','ركعة واحدة'],
+['din','من الصحابي الملقب بالفاروق؟','عمر بن الخطاب','أبو بكر الصديق','عثمان بن عفان','علي بن أبي طالب'],
+['din','ما أول مسجد بُني في الإسلام؟','مسجد قباء','المسجد النبوي','المسجد الحرام','مسجد القبلتين'],
+['his','من أول الخلفاء الراشدين؟','أبو بكر الصديق','عمر بن الخطاب','عثمان بن عفان','علي بن أبي طالب'],
+['his','من قاد المسلمين في معركة حطين؟','صلاح الدين الأيوبي','سيف الدين قطز','نور الدين زنكي','الظاهر بيبرس'],
+['his','من القائد الذي عبر إلى الأندلس سنة 711م؟','طارق بن زياد','موسى بن نصير','عقبة بن نافع','عبدالرحمن الداخل'],
+['his','ما عاصمة الدولة الأموية؟','دمشق','بغداد','القاهرة','قرطبة'],
+['his','من بنى مدينة بغداد؟','أبو جعفر المنصور','هارون الرشيد','المأمون','أبو العباس السفاح'],
+['his','من فتح القسطنطينية؟','محمد الفاتح','سليمان القانوني','سليم الأول','أورخان'],
+['his','ما أول غزوة كبرى في الإسلام؟','غزوة بدر','غزوة أحد','غزوة الخندق','غزوة تبوك'],
+['his','من مؤسس المملكة العربية السعودية الحديثة؟','الملك عبدالعزيز','الملك سعود','الملك فيصل','الملك خالد'],
+['his','أي حضارة نحتت مدينة البتراء؟','الأنباط','الفراعنة','الرومان','الفينيقيون'],
+['his','من أول إنسان مشى على سطح القمر؟','نيل آرمسترونغ','يوري غاغارين','باز ألدرين','مايكل كولينز'],
+['his','من اخترع المطبعة ذات الحروف المتحركة في أوروبا؟','يوهان غوتنبرغ','توماس إديسون','غاليليو غاليلي','إسحاق نيوتن'],
+['his','في أي مدينة تقع أهرامات خوفو وخفرع ومنقرع؟','الجيزة','الأقصر','أسوان','الإسكندرية'],
+['geo','ما أطول نهر في العالم؟','النيل','الأمازون','المسيسيبي','اليانغتسي'],
+['geo','ما أكبر قارة في العالم؟','آسيا','أفريقيا','أوروبا','أمريكا الشمالية'],
+['geo','ما عاصمة اليابان؟','طوكيو','أوساكا','كيوتو','سيول'],
+['geo','ما أكبر المحيطات؟','المحيط الهادئ','المحيط الأطلسي','المحيط الهندي','المحيط المتجمد الشمالي'],
+['geo','ما أعلى قمة جبلية في العالم؟','إيفرست','كليمنجارو','مون بلان','كي 2'],
+['geo','ما عاصمة أستراليا؟','كانبرا','سيدني','ملبورن','بيرث'],
+['geo','ما أكبر دولة عربية مساحة؟','الجزائر','السعودية','السودان','ليبيا'],
+['geo','ما عاصمة كندا؟','أوتاوا','تورنتو','مونتريال','فانكوفر'],
+['geo','أي بحر يفصل بين السعودية ومصر؟','البحر الأحمر','البحر المتوسط','بحر العرب','الخليج العربي'],
+['geo','ما أصغر دولة في العالم مساحة؟','الفاتيكان','موناكو','سان مارينو','البحرين'],
+['geo','ما أكبر صحراء حارة في العالم؟','الصحراء الكبرى','الربع الخالي','صحراء غوبي','صحراء كالاهاري'],
+['geo','في أي دولة تقع مدينة مراكش؟','المغرب','تونس','الجزائر','موريتانيا'],
+['sci','ما أقرب كوكب إلى الشمس؟','عطارد','الزهرة','المريخ','الأرض'],
+['sci','ما الرمز الكيميائي للذهب؟','Au','Ag','Gd','Go'],
+['sci','كم عدد عظام جسم الإنسان البالغ؟','206','180','212','300'],
+['sci','ما الغاز الذي تمتصه النباتات لصنع غذائها؟','ثاني أكسيد الكربون','الأكسجين','النيتروجين','الهيليوم'],
+['sci','ما أكبر كواكب المجموعة الشمسية؟','المشتري','زحل','نبتون','الأرض'],
+['sci','عند كم درجة مئوية يغلي الماء عند مستوى سطح البحر؟','100','90','80','120'],
+['sci','ما أكبر عضو في جسم الإنسان؟','الجلد','الكبد','الرئتان','الدماغ'],
+['sci','ما وحدة قياس القوة؟','النيوتن','الواط','الجول','الفولت'],
+['sci','أي كوكب يُعرف بالكوكب الأحمر؟','المريخ','الزهرة','عطارد','زحل'],
+['sci','من صاحب النظرية النسبية؟','ألبرت أينشتاين','إسحاق نيوتن','نيكولا تسلا','ستيفن هوكينغ'],
+['sci','كم عدد حجرات قلب الإنسان؟','أربع','اثنتان','ثلاث','خمس'],
+['sci','ما المعدن الذي يكون سائلاً في درجة حرارة الغرفة؟','الزئبق','الرصاص','القصدير','الألمنيوم'],
+['spo','كم لاعباً لكل فريق كرة قدم داخل الملعب؟','11','10','9','12'],
+['spo','أي منتخب فاز بكأس العالم لكرة القدم أكثر مرة؟','البرازيل','ألمانيا','إيطاليا','الأرجنتين'],
+['spo','كم دقيقة مدة الشوط الواحد في كرة القدم؟','45','40','30','50'],
+['spo','أين أقيمت كأس العالم 2022؟','قطر','روسيا','البرازيل','الإمارات'],
+['spo','كم لاعباً لكل فريق كرة سلة داخل الملعب؟','5','6','7','4'],
+['spo','كل كم سنة تقام الألعاب الأولمبية الصيفية؟','4 سنوات','سنتين','3 سنوات','5 سنوات'],
+['spo','كم حلقة في شعار الألعاب الأولمبية؟','5','4','6','7'],
+['spo','كم مربعاً في رقعة الشطرنج؟','64','49','81','100'],
+['spo','ما نتيجة فوز السعودية على الأرجنتين في كأس العالم 2022؟','2-1','1-0','3-1','2-0'],
+['spo','ما البطولة التي تُلعب على العشب في لندن؟','ويمبلدون','رولان غاروس','بطولة أمريكا المفتوحة','بطولة أستراليا المفتوحة'],
+['spo','أي دولة ستستضيف كأس العالم 2034؟','السعودية','قطر','المغرب','مصر'],
+['spo','في أي رياضة تُستخدم الريشة والمضرب؟','الريشة الطائرة','التنس','الاسكواش','تنس الطاولة'],
+['gen','كم يوماً في السنة الكبيسة؟','366','365','364','360'],
+['gen','ما اللون الناتج عن خلط الأزرق والأصفر؟','الأخضر','البرتقالي','البنفسجي','البني'],
+['gen','ما أسرع حيوان بري؟','الفهد','الأسد','الغزال','الحصان'],
+['gen','ما أكبر حيوان على وجه الأرض؟','الحوت الأزرق','الفيل الأفريقي','القرش الأبيض','الزرافة'],
+['gen','ما عملة اليابان؟','الين','اليوان','الوون','الروبية'],
+['gen','ما الحيوان الملقب بسفينة الصحراء؟','الجمل','الحصان','الحمار','الماعز'],
+['gen','من كتب رواية البؤساء؟','فيكتور هوغو','ليو تولستوي','وليام شكسبير','نجيب محفوظ'],
+['gen','كم عدد ألوان قوس قزح؟','سبعة','خمسة','ستة','ثمانية'],
+['gen','ما أطول عظمة في جسم الإنسان؟','عظمة الفخذ','عظمة الساق','عظمة العضد','الترقوة'],
+['gen','كم عدد أضلاع الشكل السداسي؟','6','5','7','8'],
+['gen','كم عدد أسنان الإنسان البالغ عادةً؟','32','28','30','36'],
+['gen','من الشاعر الملقب بأمير الشعراء؟','أحمد شوقي','المتنبي','حافظ إبراهيم','نزار قباني'],
+];
+// Date rounds: [event, year AD]
+const YR=[
+['الهجرة النبوية إلى المدينة المنورة',622],['غزوة بدر الكبرى',624],['فتح مكة',630],['معركة اليرموك',636],
+['قيام الدولة الأموية',661],['فتح الأندلس',711],['تأسيس مدينة بغداد',762],['معركة حطين',1187],
+['سقوط بغداد على يد المغول',1258],['معركة عين جالوت',1260],['فتح القسطنطينية',1453],['سقوط غرناطة',1492],
+['استقلال الولايات المتحدة',1776],['قيام الثورة الفرنسية',1789],['افتتاح قناة السويس',1869],['براءة اختراع الهاتف لغراهام بيل',1876],
+['افتتاح برج إيفل',1889],['استرداد الرياض',1902],['أول رحلة طيران للأخوين رايت',1903],['غرق سفينة تايتانيك',1912],
+['بداية الحرب العالمية الأولى',1914],['توحيد المملكة العربية السعودية وإعلان اسمها',1932],['أول تدفق تجاري للنفط في السعودية (بئر الدمام 7)',1938],
+['تأسيس جامعة الدول العربية',1945],['هبوط الإنسان على سطح القمر',1969],['قيام دولة الإمارات العربية المتحدة',1971],
+['سقوط جدار برلين',1989],['إطلاق أول هاتف آيفون',2007],['افتتاح برج خليفة',2010],
+].map(([e,y])=>[`في أي سنة ميلادية كان: ${e}؟`,y]).concat([
+// Number rounds: [question, number]
+['كم عدد آيات سورة البقرة؟',286],['كم عدد أجزاء القرآن الكريم؟',30],['كم عدد آيات القرآن الكريم؟',6236],
+['كم عدد الدول الأعضاء في الأمم المتحدة؟',193],['كم عدد الدول الأعضاء في جامعة الدول العربية؟',22],
+['كم متراً ارتفاع برج خليفة تقريباً؟',828],['كم كيلومتراً طول نهر النيل تقريباً؟',6650],
+['كم عدد المناطق الإدارية في المملكة العربية السعودية؟',13],['كم منتخباً يشارك في كأس العالم 2026؟',48],
+['كم عدد أسنان الحليب عند الطفل؟',20],['كم عدد مفاتيح البيانو القياسي؟',88],['كم لاعباً لكل فريق كرة طائرة داخل الملعب؟',6],
+['كم عدد كواكب المجموعة الشمسية؟',8],['كم عدد حروف اللغة العربية؟',28],['كم ساعة في الأسبوع؟',168],
+['كم دقيقة في اليوم الواحد؟',1440],['كم متراً عمق خندق ماريانا تقريباً؟',11000],
+['كم كيلومتراً يبعد القمر عن الأرض تقريباً؟',384400],
+]);
+
+
+// ---------- Map: two castles at the ends of the road, each behind a gate; 10 open fields in between
+const POS=[[72,290],[185,280],[295,135],[295,280],[295,425],[420,80],[420,210],[420,340],[420,470],[545,135],[545,280],[545,425],[655,280],[768,290]];
+const EDGES=[[0,1],[1,2],[1,3],[1,4],[2,3],[3,4],[2,5],[2,6],[3,6],[3,7],[4,7],[4,8],[5,6],[6,7],[7,8],
+  [5,9],[6,9],[6,10],[7,10],[7,11],[8,11],[9,10],[10,11],[9,12],[10,12],[11,12],[12,13]];
+const ADJ=Array.from({length:14},()=>[]);
+EDGES.forEach(([a,b])=>{ADJ[a].push(b);ADJ[b].push(a)});
+
+const T={place:12000,pick:15000,mc:15000,yr:20000,rev:4500};
+const CYCLES=4;   // each cycle: attack by player 1, attack by player 2, number round
+const MAXTIE=10;  // "both right" keeps asking new questions; only after 10 in a row does a number question settle it
+const BLOCK=100;
+const BOT='الفارس الآلي';
+
+// ---------- helpers
+const $app=document.getElementById('app');
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const cleanName=s=>String(s||'').replace(/[\u0000-\u001f​-‏‪-‮⁦-⁩]/g,'').trim().slice(0,16);
+const toLatin=s=>String(s).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d));
+const rnd=n=>Math.floor(Math.random()*n);
+const pickOne=a=>a[rnd(a.length)];
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=rnd(i+1);[a[i],a[j]]=[a[j],a[i]]}return a};
+function loadName(){try{return localStorage.getItem('qk-name')||''}catch(e){return ''}}
+function saveName(n){try{localStorage.setItem('qk-name',n)}catch(e){}}
+
+// ---------- game rules
+function valid(G,p){const out=[];G.own.forEach((o,i)=>{if(o===3-p&&ADJ[i].some(j=>G.own[j]===p))out.push(i)});return out}
+function prizeTargets(G,p){return valid(G,p).filter(i=>!G.castle[i])}
+function empties(G){return G.own.map((o,i)=>o===0?i:-1).filter(i=>i>=0)}
+function val(G,i){return G.castle[i]?1000:(G.orig[i]===G.own[i]?200:400)}
+function worthTo(G,i,p){return G.castle[i]?1000:(G.orig[i]===p?200:400)}
+function pts(G,p){let s=G['b'+p]||0;G.own.forEach((o,i)=>{if(o===p)s+=val(G,i)});return s}
+function count(G,p){return G.own.filter(o=>o===p).length}
+function left2place(G,p){return 7-count(G,p)}
+
+// ---------- state
+const S={screen:'lobby',name:loadName(),mode:null,role:null,code:'',api:null,net:'loading',room:null,
+  G:null,my:null,myPick:null,seen:{n:-1,at:0},expired:-1,yrBuf:'',helpCat:null,helpOpen:false,peers:[],hostSeen:false,oppLeft:false,err:'',
+  usedM:new Set(),usedY:new Set(),botAns:null,botPick:null,unsubs:[]};
+
+// On the game's own website, rooms go through the site's WebSocket server (same calls as the claude.ai room).
+function wsJoin(name){
+  return new Promise((resolve,reject)=>{
+    const url=(location.protocol==='https:'?'wss://':'ws://')+location.host+'/ws';
+    let ws=null,pres={},peers=Object.freeze([]),handlers=[],closed=false,first=true,myPeer=null;
+    const send=m=>{if(ws&&ws.readyState===1)ws.send(JSON.stringify(m))};
+    const api={
+      name,
+      presence(patch){for(const k in patch){if(patch[k]===null)delete pres[k];else pres[k]=patch[k]}send({t:'presence',presence:pres});return Promise.resolve()},
+      onPeers(fn){handlers.push(fn);if(peers.length)setTimeout(()=>fn({peers}),0);return ()=>{handlers=handlers.filter(h=>h!==fn)}},
+      peers:()=>peers,
+      leave(){closed=true;send({t:'leave'});try{ws.close()}catch(e){}return Promise.resolve()}
+    };
+    const timer=setTimeout(()=>{if(first){first=false;closed=true;try{ws.close()}catch(e){}reject({code:'upstream_error'})}},15000);
+    function connect(){
+      ws=new WebSocket(url);
+      ws.onopen=()=>send({t:'join',room:name,presence:pres,peer:myPeer});
+      ws.onmessage=e=>{
+        let m;try{m=JSON.parse(e.data)}catch(x){return}
+        if(m.t==='joined'){myPeer=m.peer;if(first){first=false;clearTimeout(timer);resolve(api)}}
+        else if(m.t==='peers'&&Array.isArray(m.peers)){
+          peers=Object.freeze(m.peers.map(p=>Object.freeze({...p,by:null,guest:false,updatedAt:Date.now()})));
+          handlers.forEach(h=>{try{h({peers})}catch(x){}});
+        }else if(m.t==='error'&&first){first=false;clearTimeout(timer);closed=true;try{ws.close()}catch(x){}reject({code:m.code})}
+      };
+      ws.onclose=()=>{if(!closed)setTimeout(connect,1500)};
+    }
+    connect();
+  });
+}
+(async()=>{
+  try{
+    if(!(window.claude&&window.claude.use)&&/^https?:$/.test(location.protocol)){S.api={join:wsJoin};S.net='ok';render();return}
+    if(!window.claude||!window.claude.use){S.net='none';render();return}
+    const api=await window.claude.use('room');
+    if(!api){S.net='none';render();return}
+    S.api=api;S.net='ok';render();
+  }catch(e){S.net='none';render()}
+})();
+
+function meIdx(){return S.role==='host'?1:2}
+function pname(i){const G=S.G;return (i===1?G.n1:G.n2)||(i===1?'المضيف':'الضيف')}
+
+function newG(keep){
+  return {ph:'wait',n:0,step:0,att:0,prize:false,target:-1,type:null,qid:-1,ord:null,h1:false,h2:false,helped:false,tie:0,tb:false,
+    own:Array(14).fill(0),orig:Array(14).fill(0),castle:Array(14).fill(false),hp:Array(14).fill(1),b1:0,b2:0,res:null,
+    n1:S.name,n2:keep?keep.n2:(S.mode==='bot'?BOT:''),gp:keep?keep.gp:(S.mode==='bot'?'bot':null)};
+}
+
+// ---------- networking
+function code4(){const a='abcdefghjkmnpqrstuvwxyz23456789';let s='';for(let i=0;i<4;i++)s+=a[rnd(a.length)];return s}
+async function createRoom(){
+  if(!grabName())return;
+  S.mode='online';S.role='host';S.code=code4();S.err='';
+  try{S.room=await S.api.join('qk-'+S.code)}catch(e){S.err='ما قدرنا نفتح الغرفة. جرّب مرة ثانية.';render();return}
+  S.G=newG();S.screen='wait';listen();push();
+}
+async function joinRoom(){
+  if(!grabName())return;
+  const el=document.getElementById('codeIn');
+  const c=toLatin((el&&el.value)||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+  if(c.length!==4){S.err='الرمز أربعة أحرف، مثل: k7mp';render();return}
+  S.mode='online';S.role='guest';S.code=c;S.err='';S.hostSeen=false;
+  try{S.room=await S.api.join('qk-'+c)}catch(e){S.err='ما قدرنا ندخل الغرفة. تأكد من الرمز وجرّب مرة ثانية.';render();return}
+  S.G=null;S.screen='wait';
+  S.room.presence({role:'guest',name:S.name,ans:null,pick:null}).catch(()=>{});
+  listen();render();
+}
+function playBot(){
+  if(!grabName())return;
+  S.mode='bot';S.role='host';S.code='';S.err='';S.G=newG();S.screen='wait';render();
+}
+function grabName(){
+  const el=document.getElementById('nameIn');
+  const n=cleanName(el?el.value:S.name);
+  if(!n){S.err='اكتب اسمك أول.';render();return false}
+  S.name=n;saveName(n);return true;
+}
+function listen(){
+  S.unsubs.push(S.room.onPeers(ch=>{S.peers=ch.peers;onPeers()},()=>{S.err='انقطع الاتصال بالغرفة.';render()}));
+}
+function onPeers(){
+  const others=S.peers.filter(p=>!p.sameTab&&p.kind==='viewer');
+  if(S.role==='host'){
+    const guests=others.filter(p=>p.presence&&p.presence.role==='guest');
+    if(S.G.gp&&S.G.ph==='wait'&&!guests.find(p=>p.peer===S.G.gp))S.G={...S.G,gp:null,n2:''};
+    if(!S.G.gp&&S.G.ph==='wait'&&guests.length){const g=guests[0];S.G={...S.G,gp:g.peer,n2:cleanName(g.presence.name)||'الضيف'};push()}
+    S.oppLeft=!!(S.G.gp&&!guests.find(p=>p.peer===S.G.gp));
+  }else{
+    const host=others.find(p=>p.presence&&p.presence.role==='host');
+    if(host&&host.presence.g&&typeof host.presence.g==='object'){S.hostSeen=true;S.oppLeft=false;applyG(host.presence.g)}
+    else if(S.hostSeen)S.oppLeft=true;
+  }
+  render();
+}
+function applyG(g){
+  if(!Array.isArray(g.own)||g.own.length!==14||!Array.isArray(g.castle)||!Array.isArray(g.hp))return;
+  if(g.n!==S.seen.n){S.seen={n:g.n,at:Date.now()};S.my=null;S.myPick=null;S.expired=-1;S.yrBuf='';S.err='';S.helpCat=null;S.helpOpen=false}
+  S.G=g;
+}
+function myPeer(){const p=S.peers.find(p=>p.sameTab);return p?p.peer:null}
+function push(){
+  if(S.mode==='online'&&S.room)S.room.presence({role:'host',name:S.name,g:S.G}).catch(()=>{});
+  render();
+}
+async function leave(){
+  S.unsubs.forEach(u=>{try{u()}catch(e){}});S.unsubs=[];
+  if(S.room){try{await S.room.leave()}catch(e){}}
+  Object.assign(S,{screen:'lobby',mode:null,role:null,room:null,G:null,my:null,myPick:null,code:'',peers:[],oppLeft:false,err:'',seen:{n:-1,at:0},botAns:null,botPick:null});
+  render();
+}
+
+// ---------- host engine
+function pickQ(type,cat){
+  // Random from every category (or the one a player chose with their help). Never repeats until that pool is used up.
+  if(type==='mc'){
+    const inCats=MC.map((q,i)=>i).filter(i=>!cat||MC[i][0]===cat);
+    let pool=inCats.filter(i=>!S.usedM.has(i));
+    if(!pool.length){inCats.forEach(i=>S.usedM.delete(i));pool=inCats}
+    const i=pickOne(pool);S.usedM.add(i);return i;
+  }
+  let pool=YR.map((q,i)=>i).filter(i=>!S.usedY.has(i));
+  if(!pool.length){S.usedY.clear();pool=YR.map((q,i)=>i)}
+  const i=pickOne(pool);S.usedY.add(i);return i;
+}
+function setPh(patch){
+  S.G={...S.G,...patch,n:S.G.n+1};
+  S.seen={n:S.G.n,at:Date.now()};S.my=null;S.myPick=null;S.botAns=null;S.botPick=null;S.expired=-1;S.yrBuf='';S.err='';S.helpCat=null;S.helpOpen=false;
+  if(S.mode==='bot')botAct();
+  push();
+}
+function startGame(){
+  if(S.role!=='host'||!S.G.gp)return;
+  // Castles sit at the two ends of the road; which end each player gets is random.
+  const L=Math.random()<.5?1:2;
+  const own=Array(14).fill(0);own[0]=own[1]=L;own[12]=own[13]=3-L;
+  const castle=Array(14).fill(false);castle[0]=castle[13]=true;
+  S.G={...newG(S.G),own,orig:own.slice(),castle,hp:castle.map(c=>c?2:1)};
+  setPh({ph:'place',att:1,target:-1});
+}
+function doPlace(i){
+  const G=S.G;
+  if(G.ph!=='place'||G.own[i]!==0)return;
+  const own=G.own.slice(), orig=G.orig.slice();own[i]=G.att;orig[i]=G.att;
+  if(own.includes(0)){
+    let nxt=3-G.att;if(7-own.filter(o=>o===nxt).length<=0)nxt=G.att;
+    setPh({ph:'place',att:nxt,own,orig,target:i});
+  }else{S.G={...G,own,orig,step:0};enterStep()}
+}
+function enterStep(){
+  const G=S.G;
+  if(G.step>=CYCLES*3||!G.own.includes(1)||!G.own.includes(2))return setPh({ph:'over',res:null,target:-1});
+  const s=G.step%3;
+  if(s<2){
+    const att=s+1;
+    if(!valid(G,att).length){S.G={...G,step:G.step+1};return enterStep()}
+    setPh({ph:'pick',att,prize:false,target:-1,res:null,tie:0,tb:false,helped:false});
+  }else{
+    setPh({ph:'q',type:'yr',qid:pickQ('yr'),att:0,target:-1,ord:null,res:null,tie:0,tb:false,helped:false});
+  }
+}
+function choosePick(t,cat){
+  const G=S.G;
+  if(G.ph!=='pick')return;
+  if(G.prize){
+    if(!prizeTargets(G,G.att).includes(t))return;
+    const own=G.own.slice();own[t]=G.att;
+    return setPh({ph:'rev',own,target:t,res:{k:'prize',w:G.att,target:t}});
+  }
+  if(!valid(G,G.att).includes(t))return;
+  const hk='h'+G.att, useHelp=!!cat&&!!CATNAME[cat]&&!G[hk];
+  setPh({ph:'q',type:'mc',target:t,qid:pickQ('mc',useHelp?cat:null),ord:shuffle([0,1,2,3]),res:null,tie:0,tb:false,helped:useHelp,[hk]:G[hk]||useHelp});
+}
+function botAct(){
+  const G=S.G, n=G.n;
+  if((G.ph==='place'||G.ph==='pick')&&G.att===2){
+    const d=1000+rnd(2000);
+    setTimeout(()=>{
+      if(!S.G||S.G.n!==n)return;
+      const g=S.G;
+      if(g.ph==='place'){
+        const e=empties(g), near=e.filter(i=>ADJ[i].some(j=>g.own[j]===2));
+        S.botPick={n,t:pickOne(near.length&&Math.random()<.7?near:e)};
+      }else{
+        const v=g.prize?prizeTargets(g,2):valid(g,2);
+        S.botPick={n,t:pickOne(v),cat:!g.prize&&!g.h2&&Math.random()<.3?pickOne(CATS)[0]:null};
+      }
+    },d);
+  }else if(G.ph==='q'){
+    const delay=G.type==='mc'?3000+rnd(9000):5000+rnd(12000);
+    let a;
+    if(G.type==='mc')a=Math.random()<0.6?0:1+rnd(3);
+    else{const y=YR[G.qid][1];a=Math.max(0,y+Math.round((Math.random()*2-1)*Math.random()*Math.max(4,Math.min(60,y*0.1))))}
+    setTimeout(()=>{if(S.G&&S.G.n===n)S.botAns={n,a,ms:delay}},delay);
+  }
+}
+function guestPresence(){const p=S.peers.find(p=>p.peer===S.G.gp);return p&&p.presence||{}}
+function oppAns(){
+  const G=S.G;
+  if(S.mode==='bot')return S.botAns&&S.botAns.n===G.n?S.botAns:null;
+  const a=guestPresence().ans;
+  if(!a||typeof a!=='object'||a.n!==G.n||!Number.isInteger(a.a))return null;
+  if(G.type==='mc'&&(a.a<0||a.a>3))return null;
+  return {n:a.n,a:a.a,ms:typeof a.ms==='number'?a.ms:0};
+}
+function oppPick(){
+  const G=S.G;
+  if(S.mode==='bot')return S.botPick&&S.botPick.n===G.n?S.botPick:null;
+  const p=guestPresence().pick;
+  return p&&typeof p==='object'&&p.n===G.n&&Number.isInteger(p.t)?{t:p.t,cat:typeof p.cat==='string'?p.cat:null}:null;
+}
+function hostTick(){
+  const G=S.G;if(!G)return;
+  const el=Date.now()-S.seen.at, grace=G.att===2&&S.mode==='online'?1500:0;
+  if(G.ph==='place'){
+    if(G.att===2){const p=oppPick();if(p&&G.own[p.t]===0)return doPlace(p.t)}
+    if(el>T.place+grace)doPlace(pickOne(empties(G)));
+  }else if(G.ph==='pick'){
+    const list=G.prize?prizeTargets(G,G.att):valid(G,G.att);
+    if(G.att===2){const p=oppPick();if(p&&list.includes(p.t))return choosePick(p.t,p.cat)}
+    if(el>T.pick+grace)choosePick(pickOne(list));
+  }else if(G.ph==='q'){
+    const a1=S.my&&S.my.n===G.n?S.my:null, a2=oppAns();
+    if((a1&&a2)||el>T[G.type]+1500)resolve(a1,a2);
+  }else if(G.ph==='rev'&&el>T.rev){
+    const R=G.res;
+    if(R&&R.k==='tie'){
+      if(R.last)setPh({ph:'q',type:'yr',tb:true,qid:pickQ('yr'),ord:null,res:null});
+      else setPh({ph:'q',type:'mc',qid:pickQ('mc'),ord:shuffle([0,1,2,3]),tie:G.tie+1,helped:false,res:null});
+    }else if(R&&R.k==='yr'&&R.w&&prizeTargets(G,R.w).length){
+      setPh({ph:'pick',att:R.w,prize:true,target:-1,res:null});
+    }else{S.G={...G,step:G.step+1};enterStep()}
+  }
+}
+function attackOutcome(out,a1,a2){
+  // out: 'win' (attacker right, defender wrong) | 'block' (defender right) | 'fail' (both wrong)
+  const G=S.G, att=G.att, def=3-att, t=G.target, pack=a=>a?{a:a.a}:null;
+  const own=G.own.slice(), hp=G.hp.slice();let b1=G.b1,b2=G.b2,gain=0,kind=out;
+  if(out==='win'){
+    hp[t]-=1;
+    if(hp[t]>0)kind='wall';
+    else{gain=worthTo(G,t,att);own[t]=att;hp[t]=G.castle[t]?2:1}
+  }else if(out==='block'){if(def===1)b1+=BLOCK;else b2+=BLOCK}
+  setPh({ph:'rev',own,hp,b1,b2,res:{k:'atk',out:kind,target:t,gain,a1:pack(a1),a2:pack(a2)}});
+}
+function resolve(a1,a2){
+  const G=S.G;
+  if(G.type==='yr'){
+    const y=YR[G.qid][1];
+    const d1=a1?Math.abs(a1.a-y):Infinity, d2=a2?Math.abs(a2.a-y):Infinity;
+    const w=d1<d2?1:d2<d1?2:0;
+    if(G.tb){
+      const wA=G.att===1?d1<d2:d2<d1;
+      return attackOutcome(wA?'win':(w?'block':'fail'),a1,a2);
+    }
+    return setPh({ph:'rev',res:{k:'yr',a1:a1?{a:a1.a}:null,a2:a2?{a:a2.a}:null,w}});
+  }
+  const aA=G.att===1?a1:a2, aD=G.att===1?a2:a1;
+  const okA=!!aA&&aA.a===0, okD=!!aD&&aD.a===0;
+  if(okA&&okD)return setPh({ph:'rev',res:{k:'tie',last:G.tie+1>=MAXTIE,a1:{a:a1.a},a2:{a:a2.a}}});
+  attackOutcome(okA?'win':okD?'block':'fail',a1,a2);
+}
+
+// ---------- player actions
+function answer(a){
+  const G=S.G;
+  if(!G||G.ph!=='q'||(S.my&&S.my.n===G.n))return;
+  const ms=Date.now()-S.seen.at;
+  if(ms>T[G.type])return;
+  S.my={n:G.n,a,ms};
+  if(S.role==='guest'&&S.room)S.room.presence({ans:S.my}).catch(()=>{});
+  render();
+}
+function canType(){const G=S.G;return G&&G.ph==='q'&&G.type==='yr'&&!(S.my&&S.my.n===G.n)&&S.expired!==G.n}
+function typeDigit(d){if(!canType()||S.yrBuf.length>=6)return;S.yrBuf=(S.yrBuf+d).replace(/^0+(?=\d)/,'');S.err='';render()}
+function delDigit(){if(!canType())return;S.yrBuf=S.yrBuf.slice(0,-1);render()}
+function submitYear(){
+  if(!canType())return;
+  const v=parseInt(S.yrBuf,10);
+  if(!Number.isInteger(v)){S.err='اكتب رقم أول.';render();return}
+  S.err='';answer(v);
+}
+function clickNode(i){
+  const G=S.G;
+  if(!G||G.att!==meIdx()||!clickable(G).includes(i))return;
+  if(S.role==='host')return G.ph==='place'?doPlace(i):choosePick(i,S.helpCat);
+  if(S.myPick&&S.myPick.n===G.n)return;
+  S.myPick={n:G.n,t:i,cat:G.ph==='pick'?S.helpCat||null:null};
+  if(S.room)S.room.presence({pick:S.myPick}).catch(()=>{});
+  render();
+}
+function clickable(G){
+  if(G.att!==meIdx()||(S.myPick&&S.myPick.n===G.n))return [];
+  if(G.ph==='place')return empties(G);
+  if(G.ph==='pick')return G.prize?prizeTargets(G,G.att):valid(G,G.att);
+  return [];
+}
+
+// ---------- map drawing
+function castleSymbol(){
+  const stone='#C9C0AC', stone2='#B3AA96', dark='#2B2219';
+  const mer=(x,y,w,n)=>{let s='';const st=w/(n*2-1);for(let k=0;k<n;k++)s+=`<rect x="${(x+k*2*st).toFixed(1)}" y="${y-6}" width="${st.toFixed(1)}" height="6" fill="${stone2}"/>`;return s};
+  return `<symbol id="castle" viewBox="0 0 130 120">
+  <ellipse cx="65" cy="112" rx="60" ry="8" fill="rgba(0,0,0,.35)"/>
+  <path d="M6 112 L14 94 H116 L124 112Z" fill="#6F6A63"/>
+  <rect x="22" y="52" width="86" height="44" fill="${stone2}"/>${mer(22,52,86,7)}
+  <rect x="46" y="30" width="38" height="66" fill="${stone}"/>${mer(46,30,38,4)}
+  <rect x="8" y="40" width="24" height="56" fill="${stone}"/><polygon points="4,40 20,10 36,40" style="fill:var(--tc)"/>
+  <rect x="98" y="40" width="24" height="56" fill="${stone}"/><polygon points="94,40 110,10 126,40" style="fill:var(--tc)"/>
+  <path d="M8 58 H32 M8 74 H32 M98 58 H122 M98 74 H122 M22 70 H46 M84 70 H108 M46 50 H84 M46 66 H84" stroke="rgba(0,0,0,.14)" stroke-width="1.5"/>
+  <rect x="17" y="50" width="5" height="10" rx="2.5" fill="${dark}"/><rect x="107" y="50" width="5" height="10" rx="2.5" fill="${dark}"/>
+  <rect x="62" y="40" width="6" height="11" rx="3" fill="${dark}"/>
+  <path d="M55 96 V80 a10 10 0 0 1 20 0 V96Z" fill="${dark}"/>
+  <path d="M59 96 V78 M65 96 V72 M71 96 V78 M55 84 H75 M55 90 H75" stroke="#7A6A50" stroke-width="1.4"/>
+  <line x1="65" y1="30" x2="65" y2="4" stroke="#4E463C" stroke-width="2.4"/>
+  <path d="M66 4 L88 10 L66 16Z" style="fill:var(--tc)"/>
+  </symbol>`;
+}
+const SOLDIER=`<symbol id="soldier" viewBox="0 0 40 60">
+  <line x1="33" y1="5" x2="33" y2="57" stroke="#D8C7A0" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M33 0 L36.5 8 H29.5Z" fill="#D7DEE8"/>
+  <rect x="14" y="41" width="5" height="15" rx="2" fill="#3A2E22"/><rect x="21" y="41" width="5" height="15" rx="2" fill="#3A2E22"/>
+  <path d="M11 25 Q20 20 29 25 L30.5 44 H9.5 Z" style="fill:var(--tc)"/>
+  <rect x="10" y="34" width="20" height="3" fill="#3A2E22"/>
+  <circle cx="20" cy="16" r="6.5" fill="#E8C9A0"/>
+  <path d="M12.5 16 Q12.5 6.5 20 6.5 Q27.5 6.5 27.5 16 Z" fill="#B4BDCC"/>
+  <rect x="11.5" y="14.5" width="17" height="2.4" rx="1" fill="#8D97AA"/>
+  <path d="M20 6.5 Q23 0 30 2 Q24.5 3.5 21.5 8.5Z" style="fill:var(--tc)"/>
+  <circle cx="31" cy="30" r="2.7" fill="#E8C9A0"/>
+  <ellipse cx="11" cy="32" rx="7.5" ry="9.5" style="fill:var(--tcd)" stroke="#E0B252" stroke-width="1.6"/>
+  <path d="M11 25.5 V38.5 M5.5 32 H16.5" stroke="#E0B252" stroke-width="1.4"/>
+</symbol>`;
+function roadPath(a,b,k){
+  const [x1,y1]=POS[a],[x2,y2]=POS[b], mx=(x1+x2)/2, my=(y1+y2)/2, dx=x2-x1, dy=y2-y1, L=Math.hypot(dx,dy)||1;
+  const off=((k*37)%5-2)*6;
+  return `M${x1} ${y1} Q${(mx-dy/L*off).toFixed(1)} ${(my+dx/L*off).toFixed(1)} ${x2} ${y2}`;
+}
+const tree=(x,y,r)=>`<rect x="${x-2}" y="${y}" width="4" height="${r*.9}" fill="#4A3523"/><circle cx="${x}" cy="${y}" r="${r}" fill="#24401F"/><circle cx="${x-r*.3}" cy="${y-r*.35}" r="${r*.55}" fill="#335A2B"/>`;
+const mount=(x,y,s)=>`<polygon points="${x-s},${y} ${x},${y-s*1.3} ${x+s},${y}" fill="#5E5A54"/><polygon points="${x},${y-s*1.3} ${x+s},${y} ${x+s*.15},${y}" fill="#4C4843"/><polygon points="${x-s*.32},${y-s*.88} ${x},${y-s*1.3} ${x+s*.32},${y-s*.88} ${x+s*.1},${y-s*.8} ${x-s*.08},${y-s*.92}" fill="#E8ECF2"/>`;
+const TERRAIN=(()=>{
+  let s=`<defs>${castleSymbol()}${SOLDIER}
+    <radialGradient id="gr" cx="50%" cy="45%" r="70%"><stop offset="0" stop-color="#4B6B3F"/><stop offset="1" stop-color="#2C4428"/></radialGradient>
+    <pattern id="grassP" width="26" height="26" patternUnits="userSpaceOnUse"><path d="M4 20 l2 -5 M14 8 l2 -5 M20 22 l-1 -4" stroke="#5E7F4C" stroke-width="1.3" stroke-linecap="round" opacity=".55"/></pattern>
+  </defs>
+  <rect x="0" y="0" width="840" height="540" fill="url(#gr)"/><rect x="0" y="0" width="840" height="540" fill="url(#grassP)"/>
+  <path d="M600 -10 C570 120 632 200 602 285 S578 450 610 560" stroke="var(--water)" stroke-width="30" fill="none" stroke-linecap="round"/>
+  <path d="M600 -10 C570 120 632 200 602 285 S578 450 610 560" stroke="var(--water2)" stroke-width="6" fill="none" stroke-dasharray="14 22" opacity=".55"/>
+  <ellipse cx="140" cy="455" rx="74" ry="34" fill="var(--water)"/><ellipse cx="128" cy="448" rx="38" ry="12" fill="var(--water2)" opacity=".35"/>`;
+  s+=mount(70,140,34)+mount(125,120,42)+mount(178,155,28);
+  s+=mount(705,470,36)+mount(765,445,40)+mount(735,515,26);
+  [[690,80,16],[735,118,13],[785,82,15],[655,52,12],[360,40,12],[490,505,13],[350,505,11],[62,395,13],[235,490,14],[248,392,11],[520,40,11],[225,60,12]].forEach(([x,y,r])=>s+=tree(x,y,r));
+  EDGES.forEach(([a,b],k)=>s+=`<path class="road-edge" d="${roadPath(a,b,k)}"/>`);
+  EDGES.forEach(([a,b],k)=>s+=`<path class="road" d="${roadPath(a,b,k)}"/>`);
+  EDGES.forEach(([a,b],k)=>s+=`<path class="road-mid" d="${roadPath(a,b,k)}"/>`);
+  return s;
+})();
+function badge(x,y,txt){const w=txt.length*8+16;return `<g class="badge"><rect x="${x-w/2}" y="${y-10}" width="${w}" height="20" rx="10"/><text x="${x}" y="${y+1}">${txt}</text></g>`}
+function vMap(){
+  const G=S.G, can=clickable(G);
+  const pend=S.myPick&&S.myPick.n===G.n?S.myPick.t:-1;
+  const sel=(G.ph==='q'&&G.target>=0)||(G.ph==='rev'&&G.target>=0)?G.target:pend;
+  const R=G.res, pulse=G.ph==='rev'&&R&&(R.k==='prize'||R.out==='win'||R.out==='wall')?R.target:(G.ph==='place'&&G.target>=0?G.target:-1);
+  let s=`<svg class="map" viewBox="0 0 840 540" role="group" aria-label="خريطة المعركة">${TERRAIN}`;
+  // draw back-to-front so lower figures overlap upper ones
+  const order=POS.map((p,i)=>i).sort((a,b)=>POS[a][1]-POS[b][1]);
+  order.forEach(i=>{
+    const [x,y]=POS[i], o=G.own[i], c=G.castle[i], isCan=can.includes(i);
+    const cls=`spot t${o} ${o?'':'empty'} ${isCan?'can':''} ${i===sel?'sel':''} ${i===pulse?'just':''}`;
+    const attrs=isCan?`data-act="node" data-i="${i}" tabindex="0" role="button"`:'';
+    const who=o===meIdx()?'لك':o?'للخصم':'فاضي';
+    if(c){
+      const walls=`<g class="walls">${[0,1].map(k=>`<circle cx="${x-8+k*16}" cy="${y+40}" r="5" fill="${k<G.hp[i]?'#E0B252':'#3A4566'}"/>`).join('')}</g>`;
+      s+=`<g class="${cls}" ${attrs} aria-label="قلعة ${who}، 1000 نقطة، الأسوار ${G.hp[i]}">
+        <ellipse class="ring" cx="${x}" cy="${y-28}" rx="74" ry="66"/>
+        <use href="#castle" x="${x-65}" y="${y-95}" width="130" height="120"/>
+        ${G.hp[i]<2?`<path d="M${x-30} ${y-40} l6 8 -5 6 7 9 M${x+28} ${y-30} l-5 7 6 6 -4 8" stroke="#2B2219" stroke-width="2.2" fill="none"/>`:''}
+        ${walls}${badge(x,y+60,'1000')}
+        ${isCan?`<ellipse class="hit" cx="${x}" cy="${y-28}" rx="74" ry="66"/>`:''}</g>`;
+    }else if(o){
+      s+=`<g class="${cls}" ${attrs} aria-label="جندي ${who}، ${val(G,i)} نقطة">
+        <ellipse class="ring" cx="${x}" cy="${y-16}" rx="38" ry="44"/>
+        <ellipse class="base" cx="${x}" cy="${y+8}" rx="28" ry="10"/><ellipse class="plate" cx="${x}" cy="${y+5}" rx="23" ry="8"/>
+        <use href="#soldier" x="${x-23}" y="${y-62}" width="46" height="69"/>
+        ${badge(x,y+30,String(val(G,i)))}
+        ${isCan?`<ellipse class="hit" cx="${x}" cy="${y-16}" rx="38" ry="44"/>`:''}</g>`;
+    }else{
+      s+=`<g class="${cls}" ${attrs} aria-label="مكان فاضي">
+        <circle class="ring" cx="${x}" cy="${y}" r="30"/>
+        <ellipse class="plate" cx="${x}" cy="${y}" rx="22" ry="12"/>
+        <path class="plus" d="M${x-7} ${y} H${x+7} M${x} ${y-7} V${y+7}"/>
+        ${isCan?`<circle class="hit" cx="${x}" cy="${y}" r="30"/>`:''}</g>`;
+    }
+  });
+  s+='</svg>';
+  return `<div class="mapcard">${s}</div>
+  <div class="legend"><span>جندي <b>200</b></span><span>جندي مسروق <b>400</b></span><span>قلعة <b>1000</b> بسورين</span><span>صد هجوم <b>+100</b></span></div>`;
+}
+
+// ---------- views
+function vLobby(){
+  const online=S.net==='ok';
+  return `
+  <div class="hero">
+    <h1>قلاع المعرفة</h1>
+    <p class="sub">وزّع جنودك على الخريطة، هاجم أرض خصمك بالأسئلة، واحمِ قلعتك اللي في آخر الطريق.</p>
+  </div>
+  <div class="card">
+    <div class="row" style="flex-direction:column;align-items:stretch;gap:6px">
+      <label for="nameIn">اسمك في المعركة</label>
+      <input type="text" id="nameIn" maxlength="16" placeholder="مثلاً: أبو فهد" value="${esc(S.name)}" autocomplete="nickname">
+    </div>
+    ${S.err?`<p class="badc">${esc(S.err)}</p>`:''}
+    <div class="row">
+      <button class="primary" data-act="create" ${online?'':'disabled'}>أنشئ غرفة</button>
+      <span class="muted">أو</span>
+      <input type="text" id="codeIn" maxlength="4" placeholder="رمز الغرفة" style="max-width:150px;direction:ltr;text-align:center" ${online?'':'disabled'}>
+      <button data-act="join" ${online?'':'disabled'}>ادخل</button>
+    </div>
+    ${S.net==='loading'?'<p class="note">نجهّز الاتصال...</p>':''}
+    ${S.net==='none'?'<p class="note">اللعب أون لاين يشتغل لما تفتح الصفحة من claude.ai وأنت مسجّل دخول، وصاحبك لازم يكون مدعو للصفحة. تقدر الحين تجرب ضد الفارس الآلي.</p>':''}
+    <div class="row"><button class="ghost" data-act="bot">العب ضد الفارس الآلي</button></div>
+  </div>
+  <div class="card">
+    <h2>طريقة اللعب</h2>
+    <ul class="rules">
+      <li><b>الخريطة:</b> كل قلعة في آخر الطريق، وقدامها بوابة يحرسها جندي. وبينهم ١٠ أماكن فاضية.</li>
+      <li><b>توزيع الجنود:</b> قبل المعركة توزعون ٥ جنود بالتناوب، كل واحد يختار المكان اللي يبيه.</li>
+      <li><b>الهجوم:</b> بدورك تختار جندي لخصمك يلامس أرضك.</li>
+      <li><b>سؤال الخيارات:</b> المهم تجاوب صح، مو الأسرع. لو أنت صح وخصمك غلط تاخذ المنطقة. لو هو صح وأنت غلط يصد الهجوم ويكسب ١٠٠. لو الاثنين صح ينعاد سؤال ثاني، ولو الاثنين غلط تعادل وما أحد ياخذ نقاط.</li>
+      <li><b>القلعة صعبة:</b> لها سوران، تحتاج تكسب هجمتين عليها عشان تحتلها.</li>
+      <li><b>النقاط:</b> جندي ٢٠٠، جندي مسروق ٤٠٠، قلعة ١٠٠٠. وتقدر تسترد جنودك.</li>
+      <li><b>سؤال الأرقام:</b> بعد كل هجومين، سؤال جوابه رقم تكتبه بلوحة الأرقام. الأقرب ياخذ جندي (مو قلعة) بدون سؤال.</li>
+      <li><b>المساعدة:</b> لكل لاعب مرة وحدة يختار فيها نوع السؤال وقت هجومه. غير كذا الأسئلة عشوائية وما تتكرر.</li>
+      <li><b>الفوز:</b> بعد ٤ جولات، الأعلى نقاط يفوز.</li>
+    </ul>
+  </div>`;
+}
+function vTop(){
+  const G=S.G;
+  let lbl='';
+  if(G&&G.ph==='place')lbl='توزيع الجنود';
+  else if(G&&G.ph!=='wait'&&G.ph!=='over')lbl=`الجولة ${Math.min(CYCLES,Math.floor(G.step/3)+1)} من ${CYCLES}`;
+  return `<div class="top"><span class="brand">قلاع المعرفة</span>${lbl?`<span class="rnd">${lbl}</span>`:''}<button class="small ghost" data-act="leave">خروج</button></div>`;
+}
+function vWait(){
+  const G=S.G;
+  if(S.role==='host'){
+    const ready=!!G.gp;
+    return `${vTop()}
+    ${S.mode==='online'?`
+    <div class="card">
+      <h2>غرفتك جاهزة</h2>
+      <p class="muted">ارسل الرمز لصاحبك. يفتح نفس الصفحة، يكتب اسمه، ويدخل الرمز.</p>
+      <div class="code" id="codeBox">${esc(S.code)}</div>
+      <div class="row"><button class="small" data-act="copy">نسخ الرمز</button><span id="copyMsg" class="muted"></span></div>
+      <div class="status"><span class="dot ${ready?'on':''}"></span><span>${ready?`انضم <b>${esc(G.n2)}</b>، جاهزين!`:'بانتظار صاحبك...'}</span></div>
+    </div>`:`
+    <div class="card"><h2>تحدي ضد ${BOT}</h2><p class="muted">جرّب اللعبة لوحدك. ${BOT} يجاوب صح تقريباً ٦ مرات من ١٠.</p></div>`}
+    <div class="card">
+      <p class="muted">الأسئلة عشوائية من كل الأنواع. ولكل واحد منكم مساعدة وحدة يختار فيها نوع السؤال.</p>
+      <button class="primary" data-act="start" ${ready?'':'disabled'}>ابدأ المعركة</button>
+    </div>`;
+  }
+  const full=G&&G.gp&&myPeer()&&G.gp!==myPeer();
+  return `${vTop()}
+  <div class="card">
+    <h2>غرفة <span style="direction:ltr;display:inline-block">${esc(S.code)}</span></h2>
+    ${full?'<p class="badc">الغرفة فيها لاعبين. اطلب رمز جديد.</p>':
+      G?`<div class="status"><span class="dot on"></span><span>أنت في غرفة <b>${esc(G.n1)}</b>. بانتظاره يبدأ المعركة.</span></div>`:
+      `<div class="status"><span class="dot"></span><span>ندوّر على الغرفة... تأكد إن صاحبك فاتح الصفحة وأنشأ الغرفة بنفس الرمز.</span></div>`}
+    ${S.oppLeft?'<p class="banner">المضيف طلع من الغرفة.</p>':''}
+  </div>`;
+}
+function vScore(){
+  const G=S.G, me=meIdx();
+  const turn=G.ph==='place'||G.ph==='pick'||(G.ph==='q'&&G.type==='mc')||(G.ph==='q'&&G.tb)?G.att:0;
+  const verb=G.ph==='place'?'يوزع':'يهاجم';
+  const card=i=>`<div class="pl p${i} ${turn===i?'turn':''}"><span class="pn">${esc(pname(i))}</span><span class="tag">${i===me?'أنت':'الخصم'}${turn===i?' · '+verb:''}</span>
+    <span class="pts">${pts(G,i)}</span><span class="sub">${count(G,i)} مناطق${G['b'+i]?` · صد +${G['b'+i]}`:''} · المساعدة ${G['h'+i]?'مستخدمة':'متاحة'}</span></div>`;
+  return `<div class="score">${card(1)}<div class="vs">ضد</div>${card(2)}</div>`;
+}
+function timerBar(){return `<span class="tsec" id="tsec"></span>`}
+function helpBox(){
+  const G=S.G, me=meIdx();
+  if(G.prize||G['h'+me])return '';
+  if(!S.helpOpen)return `<div class="row"><button class="small" data-act="help">استخدم المساعدة: اختر نوع السؤال (مرة وحدة)</button></div>`;
+  return `<div class="helpbox"><p class="muted">اختر نوع السؤال، بعدها اختر الجندي من الخريطة:</p>
+    <div class="chips">${CATS.map(([k,n])=>`<button class="chip" data-act="helpcat" data-k="${k}" aria-pressed="${S.helpCat===k}">${n}</button>`).join('')}</div>
+    <div class="row"><button class="small ghost" data-act="helpoff">بدون مساعدة</button></div></div>`;
+}
+function vPick(){
+  const G=S.G, me=meIdx(), mine=G.att===me, waiting=S.myPick&&S.myPick.n===G.n;
+  let msg, chip;
+  if(G.ph==='place'){
+    chip='توزيع الجنود';
+    msg=mine?(waiting?'تم، لحظة...':`حط جندي على أي مكان فاضي في الخريطة. باقي لك ${left2place(G,me)} جنود.`):`${esc(pname(G.att))} يوزع جنوده...`;
+  }else if(G.prize){
+    chip='جائزة الأرقام';
+    msg=mine?(waiting?'تم، لحظة...':'فزت بسؤال الأرقام! اختر جندي لخصمك تاخذه بدون سؤال (القلعة ما تنفع).'):`${esc(pname(G.att))} فاز بسؤال الأرقام ويختار جندي ياخذه...`;
+  }else{
+    chip='اختيار الهجوم';
+    msg=mine?(waiting?'تم الاختيار، لحظة...':'دورك تهاجم! اختر من الخريطة جندي لخصمك يلامس أرضك (المحدد بالذهبي).'):`${esc(pname(G.att))} يختار وين يهجم...`;
+  }
+  return `<div class="card"><div class="qhead"><span class="cat">${chip}</span>${timerBar()}</div>
+    <div class="timer"><i id="tbar"></i></div><p class="qtext">${msg}</p>${G.ph==='pick'&&mine&&!waiting?helpBox():''}</div>`;
+}
+function targetName(G,me){return G.castle[G.target]?(G.own[G.target]===me?'قلعتك':'القلعة'):(G.own[G.target]===me?'جندي لك':'جندي')}
+function vQuestion(){
+  const G=S.G, me=meIdx(), mine=S.my&&S.my.n===G.n?S.my:null, expired=S.expired===G.n;
+  const off=mine||expired?'disabled':'';
+  const isAtt=G.att===me, isDef=G.att&&!isAtt;
+  const role=G.att?(isAtt?`<p class="role att">أنت تهاجم ${targetName(G,me)} (${worthTo(G,G.target,me)} نقطة).</p>`
+    :`<p class="role">${esc(pname(G.att))} يهاجم ${targetName(G,me)}! جاوب صح عشان تصد الهجوم وتكسب ${BLOCK}.</p>`):'';
+  let head,body;
+  if(G.type==='mc'){
+    const q=MC[G.qid];
+    head=`<span class="cat">${esc(CATNAME[q[0]])}${G.tie?` · إعادة ${G.tie}`:''}${G.helped?` · مساعدة ${esc(pname(G.att))}`:''}</span>`;
+    body=`${role}<p class="qtext">${esc(q[1])}</p><div class="opts">${G.ord.map(k=>`<button class="opt ${mine&&mine.a===k?'mine':''}" data-act="ans" data-k="${k}" ${off}>${esc(q[2+k])}</button>`).join('')}</div>`;
+  }else{
+    head=`<span class="cat">${G.tb?'سؤال الحسم':'سؤال الأرقام'}</span>`;
+    const shown=mine?String(mine.a):S.yrBuf;
+    const disp=shown?esc(shown):'<span class="ph">----</span>';
+    const hint=G.tb?'جاوبتوا صح كلكم! الأقرب للرقم الصحيح يحسم الهجوم.':'الأقرب للرقم الصحيح ياخذ جندي بدون سؤال. لو تساويتوا ما أحد ياخذ.';
+    body=`${role}<p class="qtext">${esc(YR[G.qid][0])}</p>
+      <div class="pad">
+        <div class="disp" aria-live="polite" aria-label="جوابك">${disp}</div>
+        <div class="keys">${[1,2,3,4,5,6,7,8,9].map(d=>`<button class="key" data-act="dig" data-d="${d}" ${off}>${d}</button>`).join('')}
+          <button class="key fn" data-act="del" ${off}>مسح</button><button class="key" data-act="dig" data-d="0" ${off}>0</button><button class="key fn primary" data-act="yr" ${off}>ثبّت</button></div>
+      </div>
+      <p class="muted">${hint}</p>`;
+  }
+  const foot=mine?'<p class="muted">ثبّت جوابك. ننتظر خصمك...</p>':expired?'<p class="muted">انتهى الوقت.</p>':'';
+  return `<div class="card"><div class="qhead">${head}${timerBar()}</div><div class="timer"><i id="tbar"></i></div>${body}${S.err?`<p class="badc">${esc(S.err)}</p>`:''}${foot}</div>`;
+}
+function vReveal(){
+  const G=S.G, R=G.res;
+  if(R.k==='prize')return `<div class="card"><p class="outcome">${esc(pname(R.w))} أخذ جندي بجائزة الأرقام (+${val(G,R.target)})</p></div>`;
+  const line=(i,a)=>{
+    let v;
+    if(!a)v='<span class="muted">ما جاوب</span>';
+    else if(G.type==='mc'){const ok=a.a===0;v=`<span class="${ok?'good':'badc'}">${esc(MC[G.qid][2+a.a])} · ${ok?'صح':'خطأ'}</span>`}
+    else{const d=Math.abs(a.a-YR[G.qid][1]);v=`<span class="${d===0?'good':''}">${a.a}</span> <span class="muted">(فرق ${d})</span>`}
+    return `<div class="ans p${i}"><span>${esc(pname(i))}</span><span class="v">${v}</span></div>`;
+  };
+  const right=G.type==='mc'?`الجواب الصحيح: <b>${esc(MC[G.qid][2])}</b>`:`${esc(YR[G.qid][0])} الجواب: <b>${YR[G.qid][1]}</b>`;
+  let out;
+  const A=esc(pname(G.att)), D=esc(pname(3-G.att));
+  if(R.k==='tie')out=R.last?'الاثنين جاوبوا صح مرة ثانية! سؤال أرقام يحسم الهجوم...':'الاثنين جاوبوا صح! ينعاد سؤال ثاني...';
+  else if(R.k==='yr')out=R.w?`${esc(pname(R.w))} الأقرب!${prizeTargets(G,R.w).length?' بيختار جندي ياخذه':''}`:'ما أحد فاز بسؤال الأرقام';
+  else if(R.out==='win')out=G.castle[R.target]?`${A} احتل القلعة! (+${R.gain})`:`${A} سرق جندي! (+${R.gain})`;
+  else if(R.out==='wall')out=`${A} كسر سور القلعة! باقي سور واحد`;
+  else if(R.out==='block')out=`${D} صد الهجوم (+${BLOCK})`;
+  else out='ما أحد جاوب صح. تعادل، وما أحد ياخذ نقاط';
+  return `<div class="card"><p>${right}</p>${line(1,R.a1)}${line(2,R.a2)}<p class="outcome">${out}</p></div>`;
+}
+function vOver(){
+  const G=S.G, p1=pts(G,1), p2=pts(G,2);
+  const w=p1>p2?1:p2>p1?2:count(G,1)>count(G,2)?1:count(G,2)>count(G,1)?2:0;
+  const msg=w?(w===meIdx()?'انتصرت! الخريطة لك':`${esc(pname(w))} فاز بالمعركة`):'تعادل! المعركة متكافئة';
+  return `<div class="card"><p class="big">${msg}</p>
+    <p class="muted">${esc(pname(1))}: ${p1} نقطة · ${esc(pname(2))}: ${p2} نقطة</p>
+    <div class="row">${S.role==='host'?'<button class="primary" data-act="again">معركة جديدة</button>':'<span class="muted">بانتظار المضيف يبدأ معركة جديدة.</span>'}<button class="ghost" data-act="leave">خروج</button></div></div>`;
+}
+function vGame(){
+  const G=S.G;
+  const left=S.oppLeft?`<p class="banner">${S.role==='host'?'خصمك طلع من الغرفة.':'المضيف طلع من الغرفة.'}</p>`:'';
+  const panel=G.ph==='place'||G.ph==='pick'?vPick():G.ph==='q'?vQuestion():G.ph==='rev'?vReveal():vOver();
+  return `${vTop()}${left}${vScore()}${panel}${vMap()}`;
+}
+function view(){
+  if(S.screen==='lobby')return vLobby();
+  if(!S.G||S.G.ph==='wait')return vWait();
+  return vGame();
+}
+
+function render(){
+  const ae=document.activeElement, fid=ae&&ae.id&&$app.contains(ae)?ae.id:null;
+  const vals={};$app.querySelectorAll('input').forEach(i=>{if(i.id&&!i.disabled)vals[i.id]=i.value});
+  let sel=null;try{if(fid&&ae.selectionStart!=null)sel=[ae.selectionStart,ae.selectionEnd]}catch(e){}
+  $app.innerHTML=view();
+  $app.querySelectorAll('input').forEach(i=>{if(i.id in vals&&!i.disabled)i.value=vals[i.id]});
+  if(fid){const el=document.getElementById(fid);if(el&&!el.disabled){el.focus({preventScroll:true});try{if(sel)el.setSelectionRange(sel[0],sel[1])}catch(e){}}}
+  uiTick();
+}
+function uiTick(){
+  const G=S.G;
+  if(!G||S.screen==='lobby'||!['q','pick','place'].includes(G.ph))return;
+  const dur=G.ph==='q'?T[G.type]:T[G.ph], el=Date.now()-S.seen.at, left=Math.max(0,dur-el);
+  const b=document.getElementById('tbar'), t=document.getElementById('tsec');
+  if(b)b.style.width=(left/dur*100)+'%';
+  if(t)t.textContent=Math.ceil(left/1000)+' ث';
+  if(G.ph==='q'&&left===0&&S.expired!==G.n){S.expired=G.n;render()}
+}
+setInterval(()=>{if(S.role==='host'&&S.G&&S.G.ph!=='wait')hostTick();uiTick()},200);
+
+// ---------- events
+$app.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]');if(!b||b.disabled)return;
+  const act=b.dataset.act;
+  if(act==='create')createRoom();
+  else if(act==='join')joinRoom();
+  else if(act==='bot')playBot();
+  else if(act==='leave')leave();
+  else if(act==='start')startGame();
+  else if(act==='again'){S.G=newG(S.G);S.my=null;S.seen={n:-1,at:0};push()}
+  else if(act==='help'){S.helpOpen=true;render()}
+  else if(act==='helpcat'){S.helpCat=S.helpCat===b.dataset.k?null:b.dataset.k;render()}
+  else if(act==='helpoff'){S.helpOpen=false;S.helpCat=null;render()}
+  else if(act==='ans')answer(parseInt(b.dataset.k,10));
+  else if(act==='yr')submitYear();
+  else if(act==='dig')typeDigit(b.dataset.d);
+  else if(act==='del')delDigit();
+  else if(act==='node')clickNode(parseInt(b.dataset.i,10));
+  else if(act==='copy'){
+    const msg=document.getElementById('copyMsg');
+    const ok=()=>{if(msg)msg.textContent='تم النسخ'};
+    const fallback=()=>{const box=document.getElementById('codeBox');if(box){const r=document.createRange();r.selectNodeContents(box);const s=getSelection();s.removeAllRanges();s.addRange(r)}if(msg)msg.textContent='حدّد الرمز وانسخه'};
+    try{navigator.clipboard.writeText(S.code).then(ok,fallback)}catch(err){fallback()}
+  }
+});
+$app.addEventListener('keydown',e=>{
+  if(e.key==='Enter'||e.key===' '){
+    const n=e.target.closest&&e.target.closest('[data-act="node"]');
+    if(n){e.preventDefault();clickNode(parseInt(n.dataset.i,10));return}
+  }
+  if(e.key==='Enter'&&e.target.id==='codeIn')return joinRoom();
+});
+// Physical keyboard also types into the number pad
+document.addEventListener('keydown',e=>{
+  if(!canType()||(e.target&&e.target.tagName==='INPUT'))return;
+  const k=toLatin(e.key);
+  if(/^[0-9]$/.test(k)){e.preventDefault();typeDigit(k)}
+  else if(e.key==='Backspace'){e.preventDefault();delDigit()}
+  else if(e.key==='Enter'){e.preventDefault();submitYear()}
+});
+render();
+</script>
